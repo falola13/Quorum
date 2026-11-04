@@ -12,6 +12,7 @@ streamlit>=1.30
 # Search
 tavily-python>=0.5
 ddgs>=9.0
+exa-py
 
 # Web scraping
 requests>=2.31
@@ -23,3 +24,6 @@ trafilatura>=1.6
 
 # Config
 python-dotenv>=1.0
+
+# Logging / Debugging 
+rich 
