@@ -1,0 +1,24 @@
+# LangChain 1.x
+langchain>=1.0,<2.0
+langchain-core>=1.0,<2.0
+langchain-community
+langchain-openai>=1.0,<2.0
+langchain-google-genai
+ langchain-classic   
+
+# UI
+streamlit>=1.30
+
+# Search
+tavily-python>=0.5
+
+# Web scraping
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+lxml_html_clean
+readability-lxml>=0.8
+trafilatura>=1.6
+
+# Config
+python-dotenv>=1.0
