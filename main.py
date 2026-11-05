@@ -1,7 +1,7 @@
 from src.tools.tools import search, scrape_url
 
-results = search("Latest news on AI research", 1)
-print(results)
 
-# results = scrape_url("https://www.makeareadme.com")
-# print(results)
+r = search.invoke(
+    "What is the latest research on using AI for climate change migration?"
+)
+print(r)

@@ -107,26 +107,6 @@ def _exa_search(query: str, max_results: int = 5) -> str:
     return "\n---\n".join(out)
 
 
-def search(query: str, max_results: int = 5) -> str:
-    """Try Tavily first. Fall back to Exa then fallback to DuckDuckGo if it fails or runs out."""
-    if os.getenv("TAVILY_API_KEY"):
-        try:
-            return _tavily_search(query, max_results)
-        except TAVILY_FALLBACK_ERRORS as e:
-            logger.warning("Tavily failed (%s), switching to Exa", e)
-    elif os.getenv("EXA_API_KEY"):
-        try:
-            return _exa_search(query, max_results)
-        except ExaTimeoutError as e:
-            logger.warning("Exa failed (%s), Switching to DuckDuckGo", e)
-
-    try:
-        return _ddg_search(query, max_results)
-    except DDGS_FALLBACK_ERRORS as e:
-        logger.warning("DuckDockGo failed (%s)", e)
-        return "Search is unavailable right now. No results were found for this query."
-
-
 def _clean(text: str) -> str:
     """Collapse whitespace and trim to MAX_CHARS."""
     return re.sub(r"\s+", " ", text).strip()[:MAX_CHARS]
@@ -163,6 +143,28 @@ def _extract_full_page(html: str) -> str | None:
     return text or None
 
 
+@tool
+def search(query: str, max_results: int = 5) -> str:
+    """Try Tavily first. Fall back to Exa then fallback to DuckDuckGo if it fails or runs out."""
+    if os.getenv("TAVILY_API_KEY"):
+        try:
+            return _tavily_search(query, max_results)
+        except TAVILY_FALLBACK_ERRORS as e:
+            logger.warning("Tavily failed (%s), switching to Exa", e)
+    elif os.getenv("EXA_API_KEY"):
+        try:
+            return _exa_search(query, max_results)
+        except ExaTimeoutError as e:
+            logger.warning("Exa failed (%s), Switching to DuckDuckGo", e)
+
+    try:
+        return _ddg_search(query, max_results)
+    except DDGS_FALLBACK_ERRORS as e:
+        logger.warning("DuckDockGo failed (%s)", e)
+        return "Search is unavailable right now. No results were found for this query."
+
+
+@tool
 def scrape_url(url: str) -> str:
     """
     Scrape and extract clean readable content from a URL.
