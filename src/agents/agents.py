@@ -5,6 +5,7 @@ from langchain.agents import create_agent
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
 
 from src.tools.tools import scrape_url, search
 
@@ -32,6 +33,12 @@ SOURCE: <url>
 <the key facts, figures and findings from the page>
 
 Only use what the pages say. Never invent URLs or facts."""
+
+
+class SourceSelection(BaseModel):
+    ids: list[int] = Field(
+        description="IDs of the most relevant and reliable results, best first"
+    )
 
 
 # 1st Agent: Search Agent
@@ -115,3 +122,25 @@ critic_prompt = ChatPromptTemplate.from_messages(
 
 
 critic_chain = critic = critic_prompt | llm | StrOutputParser()
+
+selector_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "The model is a research assitant that picks sources"),
+        (
+            "human",
+            """
+            Pick the 3 most relevant and reliable results from this 
+            Topic: 
+            {topic} 
+            
+
+            Results:
+            {results}
+
+            Best first, answering with their IDs only
+            """,
+        ),
+    ]
+)
+
+selector_chain = selector_prompt | llm.with_structured_output(SourceSelection)

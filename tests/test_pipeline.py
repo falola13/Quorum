@@ -1,6 +1,10 @@
 from langchain_core.messages import ToolMessage
 
-from src.pipelines.pipeline import collect_search_result, format_results_with_ids
+from src.pipelines.pipeline import (
+    collect_search_result,
+    format_results_with_ids,
+    validate_ids,
+)
 
 
 def test_removes_duplicate_urls():
@@ -71,3 +75,23 @@ def test_format_results_with_ids():
     text = format_results_with_ids(fake)
     print(text)
     assert "[1]" in text
+    assert "[2]" in text
+    assert "[3]" in text
+    assert "https://www.examr3.com" in text
+
+
+def test_validate_ids_drops_unknown():
+    model_ids = [2, 9, 1]
+    result = [{"id": 1}, {"id": 2}, {"id": 3}]
+    valid = validate_ids(model_ids, result)
+
+    assert valid == [2, 1]
+
+
+def test_validate_ids_drops_repeats():
+    model_ids = [3, 3, 1]
+    result = [{"id": 1}, {"id": 2}, {"id": 3}]
+
+    valid = validate_ids(model_ids, result)
+
+    assert valid == [3, 1]

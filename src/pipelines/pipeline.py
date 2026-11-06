@@ -5,6 +5,7 @@ from src.agents.agents import (
     build_reader_agent,
     build_search_agent,
     critic_chain,
+    selector_chain,
     writer_chain,
 )
 
@@ -33,6 +34,16 @@ def format_results_with_ids(results: list[dict]) -> str:
     return "\n\n".join(formatted_result)
 
 
+def validate_ids(ids: list[int], results: list[dict]) -> list[int]:
+    valid_ids = []
+    for i in ids:
+        for r in results:
+            if r["id"] == i and r["id"] not in valid_ids:
+                valid_ids.append(i)
+
+    return valid_ids
+
+
 def run_search(topic: str) -> list:
     print("\n" + " =" * 50)
     print("step 1 - Search agent is working ...")
@@ -51,8 +62,17 @@ def run_search(topic: str) -> list:
     )
     messages = search_result["messages"]
     tool_result = collect_search_result(messages)
-
+    print(tool_result)
     return tool_result
+
+
+def run_selector(topic: str, results: list[dict]) -> list[int]:
+    print("\n" + "=" * 50)
+    print("Step 2 - Selector is choosing sources...")
+    print("=" * 50)
+
+    selector_result = selector_chain.invoke({"topic": topic, "results": results})
+    return validate_ids(selector_result.ids, results)
 
 
 def run_reader(topic: str, results) -> str:
@@ -112,6 +132,10 @@ def run_research_pipeline(topic: str) -> dict:
     # Search
     search_result = run_search(topic)
     state["search_results"] = search_result
+
+    # Source Selector
+    state["selected_ids"] = run_selector(topic, search_result)
+    print("Selected:", state["selected_ids"])
 
     # Scraper
     scraper_result = run_reader(topic, state["search_results"])
