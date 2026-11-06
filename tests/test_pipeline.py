@@ -1,6 +1,6 @@
 from langchain_core.messages import ToolMessage
 
-from src.pipelines.pipeline import collect_search_result
+from src.pipelines.pipeline import collect_search_result, format_results_with_ids
 
 
 def test_removes_duplicate_urls():
@@ -45,3 +45,29 @@ def test_ids_are_numbered():
         2,
         3,
     ]
+
+
+def test_format_results_with_ids():
+    fake = [
+        {
+            "id": 1,
+            "title": "A list",
+            "url": "https://www.exam.com",
+            "snippet": "A snippet",
+        },
+        {
+            "id": 2,
+            "title": "A list 2",
+            "url": "https://www.exam3.com",
+            "snippet": "A snippet2",
+        },
+        {
+            "id": 3,
+            "title": "A list 3",
+            "url": "https://www.examr3.com",
+            "snippet": "A snippet4",
+        },
+    ]
+    text = format_results_with_ids(fake)
+    print(text)
+    assert "[1]" in text

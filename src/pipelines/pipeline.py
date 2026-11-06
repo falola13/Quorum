@@ -24,6 +24,15 @@ def collect_search_result(messages) -> list:
     return tool_result
 
 
+def format_results_with_ids(results: list[dict]) -> str:
+    formatted_result = []
+    for r in results:
+        formatted_result.append(
+            f"[{r['id']}] Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['snippet']}"
+        )
+    return "\n\n".join(formatted_result)
+
+
 def run_search(topic: str) -> list:
     print("\n" + " =" * 50)
     print("step 1 - Search agent is working ...")
@@ -54,7 +63,7 @@ def run_reader(topic: str, results) -> str:
     prompt = (
         f"Based on the following search results about '{topic}', "
         f"pick the most relevant URLs and scrape them for deeper content.\n\n"
-        f"Search Results:\n{results}"
+        f"Search Results:\n{format_results_with_ids(results)}"
     )
 
     reader_agent = build_reader_agent()
