@@ -1,24 +1,7 @@
 # Quorum Roadmap
 
-## The positioning problem
-
-"Multi-agent research assistant" is one of the most common LLM portfolio projects. A
-search → scrape → write → critique pipeline mostly shows that you can follow a LangChain tutorial.
-Hiring managers for AI engineering roles look for three things most of these projects don't have:
-
-1. **Measured quality.** Can you show a number, and show it improving?
-2. **Engineering for failure.** Retries, fallbacks, bounded loops, cost control, observability.
-3. **A point of view.** One non-obvious idea that you designed, built, and can defend.
-
-**Constraint: free models only.** Quorum runs on free-tier LLMs and search APIs. The scarce
-resource is **rate limits and daily quota**, not money. So "cost" in this roadmap means
-**LLM calls and tokens per report**. Treating that as a design constraint is a strength: it shows
-the same efficiency thinking companies need at scale.
-
-The phases below are ordered so that each one adds something you can show and talk about.
-**Phases 1–3 are the core. If you stop there, you still have a standout project.**
-
----
+Constraint: free models only. Quorum runs on free-tier LLMs and search APIs. The scarce
+resource is rate limits and daily quota, not money. So "cost" in this roadmap means
 
 ## The unique angle: consensus-verified claims
 
@@ -35,7 +18,7 @@ checks whether URL #3 actually says what sentence #7 claims. Quorum's differenti
 3. **Require a quorum:** a claim counts as *verified* only if ≥ N **independent** sources support it.
 
    "Independent" means different registrable domains, and a source isn't independent if it
-    republishes another source (detected with near-duplicate text similarity).
+          republishes another source (detected with near-duplicate text similarity).
 4. **Report honestly.** The final output has three sections:
    - **Verified** — meets the quorum, with inline citations and quotes
    - **Single-source** — supported by only one source, clearly labelled
@@ -55,27 +38,27 @@ more useful than a confident summary.
 
 Do this first. Reviewers read your code, not just your README.
 
-- [ ] **Fix a context-loss bug:** `pipeline.py` passes `search_results[:800]` to the reader.
+- [x] **Fix a context-loss bug:** `pipeline.py` passes `search_results[:800]` to the reader.
   ```
   That's roughly 1–2 results, so the reader never sees most of what search found.
   ```
-- [ ] The pipeline tells the reader to scrape "the most relevant URL" while `READER_PROMPT` says
+- [x] The pipeline tells the reader to scrape "the most relevant URL" while `READER_PROMPT` says
   ```
   "2–3 URLs". Pick one.
   ```
-- [ ] Every stage banner prints "step 1", and the critic banner says "Writer is drafting". Fix the labels.
-- [ ] `except Exception as e: print(e)` swallows errors and returns `None`. Raise a typed error or
+- [x] Every stage banner prints "step 1", and the critic banner says "Writer is drafting". Fix the labels.
+- [x] `except Exception as e: print(e)` swallows errors and returns `None`. Raise a typed error or
   ```
   return partial state with an `error` field.
   ```
 - [ ] Use `logging` in library code and keep `rich` output for the CLI layer.
-- [ ] Remove committed `__pycache__/` and add it to `.gitignore`.
-- [ ] Choose one source of truth for dependencies (`pyproject.toml` + `uv.lock`) and generate
+- [x] Remove committed `__pycache__/` and add it to `.gitignore`.
+- [x] Choose one source of truth for dependencies (`pyproject.toml` + `uv.lock`) and generate
   ```
   `requirements.txt` from it or delete it. Python is `>=3.12` but the committed `.pyc` files are
   3.11; make them consistent.
   ```
-- [ ] Delete or implement the `src/quorum` stub and the empty `app.py`.
+- [x] Delete or implement the `src/quorum` stub and the empty `app.py`.
 - [ ] Take the topic from the command line (`quorum "your topic"`) instead of editing `main.py`.
 - [ ] Return a typed result (a Pydantic `ResearchResult`) instead of an untyped dict.
 
