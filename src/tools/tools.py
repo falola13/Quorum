@@ -156,7 +156,7 @@ def search(query: str, max_results: int = 5):
                 "Search is unavailable right now. No results were found for this query.",
                 [],
             )
-    logger.warning("UNKNOWN SEARCH_PROVIDER '%s'", provider)
+    logger.warning("Search provider '%s' failed or has no API key", provider)
     return ("Search is unavailable right now. No results were found in this query", [])
 
 
