@@ -41,6 +41,7 @@ DDGS_FALLBACK_ERRORS = (
     ConnectionError,
 )
 
+
 MAX_CHARS = 5000
 MIN_CHARS = 200
 
@@ -57,24 +58,30 @@ HEADERS = {
 NOISE_TAGS = ["script", "style", "nav", "footer", "header", "aside", "form", "noscript"]
 
 
-def _tavily_search(query: str, max_results: int = 5) -> str:
+def _format_results(results: list[dict]) -> str:
+    out = []
+    for r in results:
+        out.append(f"Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['snippet']}")
+    return "\n---\n".join(out)
+
+
+def _tavily_search(query: str, max_results: int = 5) -> list[dict]:
     """Search the web for recent and reliable information on a topic . Returns Titles, URLs and content"""
 
     tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
     results = tavily.search(query=query, max_results=max_results)
 
-    out = []
+    out: list[dict] = []
 
     for r in results["results"]:
-        out.append(
-            f"Title: {r['title']}\nURL: {r['url']}\nSnippet:{r['content'][:300]}\n"
-        )
+        res = {"title": r["title"], "url": r["url"], "snippet": r["content"]}
+        out.append(res)
 
-    return "\n----\n".join(out)
+    return out
 
 
-def _ddg_search(query: str, max_results: int = 5) -> str:
+def _ddg_search(query: str, max_results: int = 5) -> list[dict]:
     """Search the web using ddg"""
 
     with DDGS() as ddgs:
@@ -84,27 +91,96 @@ def _ddg_search(query: str, max_results: int = 5) -> str:
             backend="auto",
         )
 
-    out = []
+    out: list[dict] = []
 
     for r in results:
-        out.append(f"Title: {r['title']}\nURL: {r['href']}\nSnippet: {r['body']}\n")
+        res = {"title": r["title"], "url": r["href"], "snippet": r["body"]}
+        out.append(res)
 
-    return "\n----\n".join(out)
+    return out
 
 
-def _exa_search(query: str, max_results: int = 5) -> str:
+def _exa_search(query: str, max_results: int = 5) -> list[dict]:
     exa = Exa(api_key=os.getenv("EXA_API_KEY"))
     results = exa.search(
         query,
         num_results=max_results,
-        text={"max_characters": 1000},
+        contents={"highlights": {"max_characters": 500}},
     )
-    out = [
-        f"Title: {r['title']}\nURL: {r['href']}\nSnippet: {r['text']}\n"
-        for r in results.results
-    ]
 
-    return "\n---\n".join(out)
+    out: list[dict] = []
+
+    for r in results.results:
+        snippet = " ... ".join(r.highlights or [])
+        res = {"title": r.title, "url": r.url, "snippet": snippet}
+        out.append(res)
+
+    return out
+
+
+@tool(response_format="content_and_artifact")
+def search(query: str, max_results: int = 5):
+    """
+     Search the web for recent and reliable information on a topic . Returns Titles , URLs and Snippet
+    Try Tavily first. Fall back to Exa then fallback to DuckDuckGo if it fails or runs out.
+    """
+    if os.getenv("TAVILY_API_KEY"):
+        try:
+            the_list = _tavily_search(query, max_results)
+            formated_text = _format_results(the_list)
+            return (formated_text, the_list)
+        except TAVILY_FALLBACK_ERRORS as e:
+            logger.warning("Tavily failed (%s), trying Exa", e)
+
+    if os.getenv("EXA_API_KEY"):
+        try:
+            the_list = _exa_search(query, max_results)
+            formated_text = _format_results(the_list)
+            return (formated_text, the_list)
+        except (Exception, ExaTimeoutError) as e:
+            logger.warning("Exa failed (%s), trying DuckDuckGo", e)
+
+    try:
+        the_list = _ddg_search(query, max_results)
+        formated_text = _format_results(the_list)
+        return (formated_text, the_list)
+    except DDGS_FALLBACK_ERRORS as e:
+        logger.warning("DuckDockGo failed (%s)", e)
+        return (
+            "Search is unavailable right now. No results were found for this query.",
+            [],
+        )
+
+
+@tool
+def scrape_url(url: str) -> str:
+    """
+    Scrape and extract clean readable content from a URL.
+    Uses multiple extraction strategies for better reliability.
+    """
+    try:
+        response = requests.get(url, headers=HEADERS, timeout=15)
+        response.raise_for_status()
+    except requests.exceptions.Timeout:
+        return "Request timed out while scraping the URL."
+    except requests.exceptions.HTTPError as e:
+        return f"HTTP error occurred: {e!s}"
+    except requests.RequestException as e:
+        return f"Could not reach URL: {e!s}"
+
+    content_type = response.headers.get("Content-Type", "")
+    if "html" not in content_type:
+        return f"Skipped: page is not HTML ({content_type or 'unknown type'})."
+
+    html = response.text
+
+    for strategy in (_extract_trafilatura, _extract_readability, _extract_full_page):
+        text = strategy(html)
+        if text:
+            logger.debug("Extracted %s using %s", url, strategy.__name__)
+            return _clean(text)
+
+    return "Could not extract meaningful content from the page."
 
 
 def _clean(text: str) -> str:
@@ -141,55 +217,3 @@ def _extract_full_page(html: str) -> str | None:
     """Strategy 3: whole page text, minus noise. Last resort."""
     text = _strip_noise(html)
     return text or None
-
-
-@tool
-def search(query: str, max_results: int = 5) -> str:
-    """Try Tavily first. Fall back to Exa then fallback to DuckDuckGo if it fails or runs out."""
-    if os.getenv("TAVILY_API_KEY"):
-        try:
-            return _tavily_search(query, max_results)
-        except TAVILY_FALLBACK_ERRORS as e:
-            logger.warning("Tavily failed (%s), switching to Exa", e)
-    elif os.getenv("EXA_API_KEY"):
-        try:
-            return _exa_search(query, max_results)
-        except ExaTimeoutError as e:
-            logger.warning("Exa failed (%s), Switching to DuckDuckGo", e)
-
-    try:
-        return _ddg_search(query, max_results)
-    except DDGS_FALLBACK_ERRORS as e:
-        logger.warning("DuckDockGo failed (%s)", e)
-        return "Search is unavailable right now. No results were found for this query."
-
-
-@tool
-def scrape_url(url: str) -> str:
-    """
-    Scrape and extract clean readable content from a URL.
-    Tries trafilatura, then readability, then full-page text.
-    """
-    try:
-        response = requests.get(url, headers=HEADERS, timeout=15)
-        response.raise_for_status()
-    except requests.exceptions.Timeout:
-        return "Request timed out while scraping the URL."
-    except requests.exceptions.HTTPError as e:
-        return f"HTTP error occurred: {e!s}"
-    except requests.RequestException as e:
-        return f"Could not reach URL: {e!s}"
-
-    content_type = response.headers.get("Content-Type", "")
-    if "html" not in content_type:
-        return f"Skipped: page is not HTML ({content_type or 'unknown type'})."
-
-    html = response.text
-
-    for strategy in (_extract_trafilatura, _extract_readability, _extract_full_page):
-        text = strategy(html)
-        if text:
-            logger.debug("Extracted %s using %s", url, strategy.__name__)
-            return _clean(text)
-
-    return "Could not extract meaningful content from the page."

@@ -1,0 +1,42 @@
+[project]
+name = "quorum"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Falo", email = "femi.deji0@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "ddgs>=9.0",
+    "exa-py>=2.27.0",
+    "fastapi>=0.162.0",
+    "langchain>=1.0,<2.0",
+    "langchain-classic>=1.0.8",
+    "langchain-community>=0.4.2",
+    "langchain-core>=1.0,<2.0",
+    "langchain-google-genai>=4.4.3",
+    "langchain-openai>=1.0,<2.0",
+    "lxml>=5.0",
+    "lxml-html-clean>=0.4.6",
+    "python-dotenv>=1.0",
+    "readability-lxml>=0.8",
+    "requests>=2.31",
+    "rich>=15.0.0",
+    "streamlit>=1.30",
+    "tavily-python>=0.5",
+    "trafilatura>=1.6",
+]
+
+[project.scripts]
+quorum = "quorum:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]

@@ -1,7 +1,8 @@
-from src.tools.tools import search, scrape_url
+import logging
 
+from src.pipelines.pipeline import run_research_pipeline
 
-r = search.invoke(
-    "What is the latest research on using AI for climate change migration?"
-)
-print(r)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
+topic = "The impact of AI on the job market in 2026"
+
+run_research_pipeline(topic)

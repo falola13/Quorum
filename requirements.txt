@@ -27,3 +27,5 @@ python-dotenv>=1.0
 
 # Logging / Debugging 
 rich 
+
+fastapi
