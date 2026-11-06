@@ -3,6 +3,7 @@ from langchain_core.messages import ToolMessage
 from src.pipelines.pipeline import (
     collect_search_result,
     format_results_with_ids,
+    run_scraper,
     validate_ids,
 )
 
@@ -95,3 +96,40 @@ def test_validate_ids_drops_repeats():
     valid = validate_ids(model_ids, result)
 
     assert valid == [3, 1]
+
+
+def test_run_scraper_skips_failed_pages(monkeypatch):
+    def fake_scrape(url):
+        if url == "B":
+            return None
+        return "page text"
+
+    monkeypatch.setattr("src.pipelines.pipeline.scrape_page", fake_scrape)
+
+    results = [
+        {
+            "id": 1,
+            "title": "A list",
+            "url": "A",
+            "snippet": "A snippet",
+        },
+        {
+            "id": 2,
+            "title": "A list 2",
+            "url": "B",
+            "snippet": "A snippet2",
+        },
+        {
+            "id": 3,
+            "title": "A list 3",
+            "url": "C",
+            "snippet": "A snippet4",
+        },
+    ]
+    page = run_scraper(results, [1, 2, 3])
+    s = [s["id"] for s in page]
+
+    assert s == [
+        1,
+        3,
+    ]

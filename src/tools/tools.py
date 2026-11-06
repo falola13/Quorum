@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -10,7 +9,6 @@ from ddgs import DDGS
 from ddgs.exceptions import DDGSException, RatelimitException, TimeoutException
 from dotenv import load_dotenv
 from exa_py import Exa
-from exa_py.errors import ExaTimeoutError
 from langchain.tools import tool
 from readability import Document
 from readability.readability import Unparseable
@@ -160,8 +158,7 @@ def search(query: str, max_results: int = 5):
     return ("Search is unavailable right now. No results were found in this query", [])
 
 
-@tool
-def scrape_url(url: str) -> str:
+def scrape_page(url: str) -> str | None:
     """
     Scrape and extract clean readable content from a URL.
     Uses multiple extraction strategies for better reliability.
@@ -170,15 +167,19 @@ def scrape_url(url: str) -> str:
         response = requests.get(url, headers=HEADERS, timeout=15)
         response.raise_for_status()
     except requests.exceptions.Timeout:
-        return "Request timed out while scraping the URL."
+        logger.warning("Request timed out while scraping the URL.")
+        return None
     except requests.exceptions.HTTPError as e:
-        return f"HTTP error occurred: {e!s}"
+        logger.warning(f"HTTP error occurred: {e!s}")
+        return None
     except requests.RequestException as e:
-        return f"Could not reach URL: {e!s}"
+        logger.warning(f"Could not reach URL: {e!s}")
+        return None
 
     content_type = response.headers.get("Content-Type", "")
     if "html" not in content_type:
-        return f"Skipped: page is not HTML ({content_type or 'unknown type'})."
+        logger.warning(f"Skipped: page is not HTML ({content_type or 'unknown type'}).")
+        return None
 
     html = response.text
 
@@ -188,7 +189,8 @@ def scrape_url(url: str) -> str:
             logger.debug("Extracted %s using %s", url, strategy.__name__)
             return _clean(text)
 
-    return "Could not extract meaningful content from the page."
+    logger.warning("Could not extract meaningful content from the page.")
+    return None
 
 
 def _clean(text: str) -> str:

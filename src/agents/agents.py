@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
-from src.tools.tools import scrape_url, search
+from src.tools.tools import search
 
 load_dotenv()
 
@@ -23,17 +23,6 @@ If the first results are thin or outdated, search again with a better query.
 
 Never drop or invent URLs."""
 
-READER_PROMPT = """You are a research reader agent.
-From the search results you're given, pick the 2-3 most relevant and reliable URLs
-and call scrape_url on each one.
-If a scrape fails, try the next best URL.
-
-For each page, return:
-SOURCE: <url>
-<the key facts, figures and findings from the page>
-
-Only use what the pages say. Never invent URLs or facts."""
-
 
 class SourceSelection(BaseModel):
     ids: list[int] = Field(
@@ -48,11 +37,6 @@ def build_search_agent():
         tools=[search],
         system_prompt=SEARCH_PROMPT,
     )
-
-
-# 2nd Agent: Reader Agent
-def build_reader_agent():
-    return create_agent(model=llm, tools=[scrape_url], system_prompt=READER_PROMPT)
 
 
 # Writer chain

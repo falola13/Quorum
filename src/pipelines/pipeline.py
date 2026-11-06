@@ -2,12 +2,12 @@ from langchain_core.messages import ToolMessage
 from rich import print
 
 from src.agents.agents import (
-    build_reader_agent,
     build_search_agent,
     critic_chain,
     selector_chain,
     writer_chain,
 )
+from src.tools.tools import scrape_page
 
 
 def collect_search_result(messages) -> list:
@@ -30,6 +30,15 @@ def format_results_with_ids(results: list[dict]) -> str:
     for r in results:
         formatted_result.append(
             f"[{r['id']}] Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['snippet']}"
+        )
+    return "\n\n".join(formatted_result)
+
+
+def format_sources(sources: list[dict]) -> str:
+    formatted_result = []
+    for r in sources:
+        formatted_result.append(
+            f"[{r['id']}] Title: {r['title']}\nURL: {r['url']}\nContent: {r['content']}"
         )
     return "\n\n".join(formatted_result)
 
@@ -78,39 +87,41 @@ def run_selector(topic: str, results: list[dict]) -> list[int]:
     return validate_ids(selector_result.ids, results)
 
 
-def run_reader(topic: str, results) -> str:
+def run_scraper(results: list[dict], selected_ids: list[int]) -> list[dict]:
     print("\n" + "=" * 50)
-    print("step 3 - reader agent is scraping top resources ...")
+    print("Step 3 - Scraping selected sources ...")
     print("=" * 50)
 
-    prompt = (
-        f"Based on the following search results about '{topic}', "
-        f"pick the most relevant URLs and scrape them for deeper content.\n\n"
-        f"Search Results:\n{format_results_with_ids(results)}"
-    )
+    by_id = {r["id"]: r for r in results}
+    scraped_result = []
+    for ids in selected_ids:
+        result = by_id[ids]
 
-    reader_agent = build_reader_agent()
-    reader_result = reader_agent.invoke({"messages": [("user", prompt)]})
-    content = reader_result["messages"][-1].text
+        page = scrape_page(result["url"])
+        if page is None:
+            continue
+        scraped_result.append(
+            {
+                "id": ids,
+                "title": result["title"],
+                "url": result["url"],
+                "content": page,
+            }
+        )
+    print("\n Scraped Result page \n", scraped_result)
+    return scraped_result
 
-    print("\nscraped content:\n", content)
-    return content
 
-
-def run_writer(topic: str, search_results, scrape_results):
+def run_writer(topic: str, sources: list[dict]):
     print("\n" + " =" * 50)
     print("step 4 - Writer is drafting the report ...")
     print("=" * 50)
 
-    research_combined = (
-        f"SEARCH RESULTS : \n {search_results} \n\n"
-        f"DETAILED SCRAPED CONTENT : \n {scrape_results}"
-    )
-
+    research = format_sources(sources)
     report = writer_chain.invoke(
         {
             "topic": topic,
-            "research": research_combined,
+            "research": research,
         }
     )
 
@@ -133,23 +144,19 @@ def run_research_pipeline(topic: str) -> dict:
     state = {}
 
     # Search
-    search_result = run_search(topic)
-    state["search_results"] = search_result
+    state["search_results"] = run_search(topic)
 
     # Source Selector
-    state["selected_ids"] = run_selector(topic, search_result)
+    state["selected_ids"] = run_selector(topic, state["search_results"])
     print("Selected:", state["selected_ids"])
 
     # Scraper
-    scraper_result = run_reader(topic, state["search_results"])
-    state["scraper_results"] = scraper_result
+    state["sources"] = run_scraper(state["search_results"], state["selected_ids"])
 
     # Writer Chain
-    report_result = run_writer(topic, state["search_results"], state["scraper_results"])
-    state["report_result"] = report_result
+    state["report_result"] = run_writer(topic, state["sources"])
 
     # Critic Chain
-    critic_result = run_critic(state["report_result"])
-    state["critic_result"] = critic_result
+    state["critic_result"] = run_critic(state["report_result"])
 
     return state
