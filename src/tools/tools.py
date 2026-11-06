@@ -124,7 +124,12 @@ def search(query: str, max_results: int = 5):
      Search the web for recent and reliable information on a topic . Returns Titles , URLs and Snippet
     Try Tavily first. Fall back to Exa then fallback to DuckDuckGo if it fails or runs out.
     """
-    if os.getenv("TAVILY_API_KEY"):
+    provider = os.getenv("SEARCH_PROVIDER", "auto").lower()
+    if provider not in ("auto", "tavily", "exa", "ddg"):
+        raise ValueError(
+            f"Invalid SEARCH_PROVIDER '{provider}'. Use one of: auto, tavily, exa, ddg"
+        )
+    if provider in ("auto", "tavily") and os.getenv("TAVILY_API_KEY"):
         try:
             the_list = _tavily_search(query, max_results)
             formated_text = _format_results(the_list)
@@ -132,24 +137,27 @@ def search(query: str, max_results: int = 5):
         except TAVILY_FALLBACK_ERRORS as e:
             logger.warning("Tavily failed (%s), trying Exa", e)
 
-    if os.getenv("EXA_API_KEY"):
+    if provider in ("auto", "exa") and os.getenv("EXA_API_KEY"):
         try:
             the_list = _exa_search(query, max_results)
             formated_text = _format_results(the_list)
             return (formated_text, the_list)
-        except (Exception, ExaTimeoutError) as e:
+        except Exception as e:
             logger.warning("Exa failed (%s), trying DuckDuckGo", e)
 
-    try:
-        the_list = _ddg_search(query, max_results)
-        formated_text = _format_results(the_list)
-        return (formated_text, the_list)
-    except DDGS_FALLBACK_ERRORS as e:
-        logger.warning("DuckDockGo failed (%s)", e)
-        return (
-            "Search is unavailable right now. No results were found for this query.",
-            [],
-        )
+    if provider in ("auto", "ddg"):
+        try:
+            the_list = _ddg_search(query, max_results)
+            formated_text = _format_results(the_list)
+            return (formated_text, the_list)
+        except DDGS_FALLBACK_ERRORS as e:
+            logger.warning("DuckDockGo failed (%s)", e)
+            return (
+                "Search is unavailable right now. No results were found for this query.",
+                [],
+            )
+    logger.warning("UNKNOWN SEARCH_PROVIDER '%s'", provider)
+    return ("Search is unavailable right now. No results were found in this query", [])
 
 
 @tool

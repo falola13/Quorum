@@ -75,6 +75,8 @@ Create a `.env` file in the project root:
 GOOGLE_API_KEY=...        # required: Gemini
 TAVILY_API_KEY=...        # optional: primary search provider
 EXA_API_KEY=...           # optional: secondary search provider
+SEARCH_PROVIDER=auto      # auto | tavily | exa | ddg
+
 ```
 
 Without Tavily or Exa keys, search falls back to DuckDuckGo.

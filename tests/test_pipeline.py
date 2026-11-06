@@ -39,8 +39,8 @@ def test_ids_are_numbered():
         ),
     ]
     result = collect_search_result(fake)
-    url = [r["id"] for r in result]
-    assert url == [
+    ids = [r["id"] for r in result]
+    assert ids == [
         1,
         2,
         3,
