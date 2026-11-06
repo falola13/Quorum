@@ -1,7 +1,7 @@
 [project]
 name = "quorum"
 version = "0.1.0"
-description = "Add your description here"
+description = "Multi-agent research assistant that verifies claims against sources"
 readme = "README.md"
 authors = [
     { name = "Falo", email = "femi.deji0@gmail.com" }
@@ -29,12 +29,7 @@ dependencies = [
     "trafilatura>=1.6",
 ]
 
-[project.scripts]
-quorum = "quorum:main"
 
-[build-system]
-requires = ["uv_build>=0.12.9,<0.13.0"]
-build-backend = "uv_build"
 
 [dependency-groups]
 dev = [

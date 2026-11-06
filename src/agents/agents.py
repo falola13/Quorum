@@ -2,11 +2,9 @@ import os
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-from pydantic import BaseModel, Field
 
 from src.tools.tools import scrape_url, search
 
@@ -36,25 +34,12 @@ SOURCE: <url>
 Only use what the pages say. Never invent URLs or facts."""
 
 
-class SearchResult(BaseModel):
-    title: str
-    url: str = Field(description="Exact URL as returned by the search tool")
-    summary: str = Field(description="2-3 sentence summary of what this source says")
-
-
-class SearchResults(BaseModel):
-    results: list[SearchResult] = Field(
-        description="The most relevant, reliable results"
-    )
-
-
 # 1st Agent: Search Agent
 def build_search_agent():
     return create_agent(
         model=llm,
         tools=[search],
         system_prompt=SEARCH_PROMPT,
-        # response_format=ToolStrategy(SearchResults),
     )
 
 

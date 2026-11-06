@@ -1,6 +1,4 @@
-import time
-
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from rich import print
 
 from src.agents.agents import (
@@ -88,9 +86,9 @@ def run_writer(topic: str, search_results, scrape_results):
     return report
 
 
-def run_critic(topic, report_result):
+def run_critic(report_result):
     print("\n" + " =" * 50)
-    print("step 4 - Writer is drafting the report ...")
+    print("step 4 - Critic is reviewing the report ...")
     print("=" * 50)
 
     feedback = critic_chain.invoke({"report": report_result})
@@ -102,6 +100,20 @@ def run_research_pipeline(topic: str) -> dict:
 
     state = {}
 
-    search = run_search(topic)
-    state["search_results"] = search
-    print(search)
+    # Search
+    search_result = run_search(topic)
+    state["search_results"] = search_result
+
+    # Scraper
+    scraper_result = run_reader(topic, state["search_results"])
+    state["scraper_results"] = scraper_result
+
+    # Writer Chain
+    report_result = run_writer(topic, state["search_results"], state["scraper_results"])
+    state["report_result"] = report_result
+
+    # Critic Chain
+    critic_result = run_critic(state["report_result"])
+    state["critic_result"] = critic_result
+
+    return state
