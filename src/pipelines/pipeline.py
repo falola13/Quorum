@@ -36,11 +36,12 @@ def format_results_with_ids(results: list[dict]) -> str:
 
 def validate_ids(ids: list[int], results: list[dict]) -> list[int]:
     valid_ids = []
+    real_ids = {r["id"] for r in results}
+    seen = set()
     for i in ids:
-        for r in results:
-            if r["id"] == i and r["id"] not in valid_ids:
-                valid_ids.append(i)
-
+        if i in real_ids and i not in seen:
+            seen.add(i)
+            valid_ids.append(i)
     return valid_ids
 
 
@@ -71,13 +72,15 @@ def run_selector(topic: str, results: list[dict]) -> list[int]:
     print("Step 2 - Selector is choosing sources...")
     print("=" * 50)
 
-    selector_result = selector_chain.invoke({"topic": topic, "results": results})
+    selector_result = selector_chain.invoke(
+        {"topic": topic, "results": format_results_with_ids(results)}
+    )
     return validate_ids(selector_result.ids, results)
 
 
 def run_reader(topic: str, results) -> str:
     print("\n" + "=" * 50)
-    print("step 2 - reader agent is scraping top resources ...")
+    print("step 3 - reader agent is scraping top resources ...")
     print("=" * 50)
 
     prompt = (
@@ -96,7 +99,7 @@ def run_reader(topic: str, results) -> str:
 
 def run_writer(topic: str, search_results, scrape_results):
     print("\n" + " =" * 50)
-    print("step 3 - Writer is drafting the report ...")
+    print("step 4 - Writer is drafting the report ...")
     print("=" * 50)
 
     research_combined = (
@@ -117,7 +120,7 @@ def run_writer(topic: str, search_results, scrape_results):
 
 def run_critic(report_result):
     print("\n" + " =" * 50)
-    print("step 4 - Critic is reviewing the report ...")
+    print("step 5 - Critic is reviewing the report ...")
     print("=" * 50)
 
     feedback = critic_chain.invoke({"report": report_result})

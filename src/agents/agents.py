@@ -125,11 +125,14 @@ critic_chain = critic = critic_prompt | llm | StrOutputParser()
 
 selector_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "The model is a research assitant that picks sources"),
+        (
+            "system",
+            "You are a research assistant that picks the best sources for a topic.",
+        ),
         (
             "human",
             """
-            Pick the 3 most relevant and reliable results from this 
+             
             Topic: 
             {topic} 
             
@@ -137,7 +140,7 @@ selector_prompt = ChatPromptTemplate.from_messages(
             Results:
             {results}
 
-            Best first, answering with their IDs only
+            Pick the 3 most relevant and reliable results, best first, answering with their IDs only
             """,
         ),
     ]
