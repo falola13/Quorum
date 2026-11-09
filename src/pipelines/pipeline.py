@@ -10,6 +10,7 @@ from src.agents.agents import (
 )
 from src.helper.helper import (
     build_sources_section,
+    check_citations,
     collect_search_result,
     format_results_with_ids,
     format_sources,
@@ -154,6 +155,13 @@ def run_research_pipeline(topic: str) -> dict:
 
     # Writer Chain
     state["report_result"] = run_writer(topic, state["sources"])
+    state["citation_check"] = check_citations(state["report_result"], state["sources"])
+    unknown = state["citation_check"]["unknown"]
+    uncited = state["citation_check"]["uncited"]
+    if unknown:
+        logger.warning("Unknown citations -- %s", unknown)
+    if uncited:
+        logger.warning("Uncited sources -- %s", uncited)
 
     # Critic Chain
     state["critic_result"] = run_critic(state["report_result"])

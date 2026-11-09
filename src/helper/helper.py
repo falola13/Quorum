@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 from langchain_core.messages import ToolMessage
@@ -58,7 +59,26 @@ def build_sources_section(sources: list[dict]) -> str:
     text.append(header)
     for source in sources:
         text.append(
-            f"[{source['id']}] {source['title']} — {source['url']} {'(snippet only)' if source['kind'] == 'snippet' else ''}"
+            f"[{source['id']}] {source['title']} — {source['url']}{' (snippet only)' if source['kind'] == 'snippet' else ''}"
         )
 
     return "\n".join(text)
+
+
+def find_citations(report: str) -> set[int]:
+    splitted_report = report.split("## Sources")[0]
+    reg = re.findall(r"\[(\d+)\]", splitted_report)
+    s = {int(r) for r in reg}
+
+    return s
+
+
+def check_citations(report: str, sources: list[dict]) -> dict:
+    set_report = set()
+    for source in sources:
+        set_report.add(source)
+    citations = find_citations(report)
+
+    uncited = set_report - citations
+    unknown = citations - set_report
+    return {"unknown": sorted(unknown), "uncited": sorted(uncited)}

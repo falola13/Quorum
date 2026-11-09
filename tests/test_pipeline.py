@@ -1,7 +1,7 @@
 import pytest
 from langchain_core.messages import ToolMessage
 
-from src.helper.helper import build_sources_section
+from src.helper.helper import build_sources_section, check_citations, find_citations
 from src.pipelines.pipeline import (
     collect_search_result,
     format_results_with_ids,
@@ -216,3 +216,21 @@ def test_build_sources_section():
     assert "## Sources" in source
     assert "exampleA.com" in source and "exampleB.com" in source
     assert source.count("(snippet only)") == 1
+
+
+def test_find_citations():
+
+    report = "A [1][2]. B [2].\n\n## Sources\n[1] x\n[3] y"
+    cited = find_citations(report)
+    assert cited == {1, 2}
+
+
+def test_check_citations():
+    sources = [1, 2, 4]
+    reports = "[1] A and fool [9] Just so you know.\n\n## Sources\n[3] y"
+
+    results = check_citations(reports, sources)
+    assert results == {
+        "unknown": [9],
+        "uncited": [2, 4],
+    }
