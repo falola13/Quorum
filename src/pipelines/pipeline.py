@@ -1,9 +1,14 @@
 import logging
 
-from langchain_core.messages import ToolMessage
-from langgraph.runtime import Runtime
 from rich import print
 
+from helper.helper import (
+    collect_search_result,
+    format_results_with_ids,
+    format_sources,
+    today_time,
+    validate_ids,
+)
 from src.agents.agents import (
     build_search_agent,
     critic_chain,
@@ -13,51 +18,6 @@ from src.agents.agents import (
 from src.tools.tools import scrape_page
 
 logger = logging.getLogger(__name__)
-
-
-def collect_search_result(messages) -> list:
-    tool_result = []
-    seen_urls = set()
-    for m in messages:
-        if isinstance(m, ToolMessage):
-            for a in m.artifact:
-                if a["url"] in seen_urls:
-                    continue
-                seen_urls.add(a["url"])
-                tool_result.append(a)
-    for i, r in enumerate(tool_result, start=1):
-        r["id"] = i
-    return tool_result
-
-
-def format_results_with_ids(results: list[dict]) -> str:
-    formatted_result = []
-    for r in results:
-        formatted_result.append(
-            f"[{r['id']}] Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['snippet']}"
-        )
-    return "\n\n".join(formatted_result)
-
-
-def format_sources(sources: list[dict]) -> str:
-    formatted_result = []
-    for r in sources:
-        label = " (snippet only)" if r["kind"] == "snippet" else ""
-        formatted_result.append(
-            f"[{r['id']}] {label} Title: {r['title']}\nURL: {r['url']}\nContent: {r['content']}"
-        )
-    return "\n\n".join(formatted_result)
-
-
-def validate_ids(ids: list[int], results: list[dict]) -> list[int]:
-    valid_ids = []
-    real_ids = {r["id"] for r in results}
-    seen = set()
-    for i in ids:
-        if i in real_ids and i not in seen:
-            seen.add(i)
-            valid_ids.append(i)
-    return valid_ids
 
 
 def run_search(topic: str) -> list:
@@ -145,7 +105,7 @@ def run_scraper(
             target,
             snippets,
         )
-    if len(scraped_result) == 0 and len(failed) == 0:
+    if not scraped_result:
         raise RuntimeError("Could not scrape any of the selected sources")
     print("\n Scraped Result page \n", scraped_result)
     return scraped_result
@@ -158,10 +118,7 @@ def run_writer(topic: str, sources: list[dict]):
 
     research = format_sources(sources)
     report = writer_chain.invoke(
-        {
-            "topic": topic,
-            "research": research,
-        }
+        {"topic": topic, "research": research, "today": today_time}
     )
 
     print("\n Final Report\n", report)
@@ -173,7 +130,7 @@ def run_critic(report_result):
     print("step 5 - Critic is reviewing the report ...")
     print("=" * 50)
 
-    feedback = critic_chain.invoke({"report": report_result})
+    feedback = critic_chain.invoke({"report": report_result, "today": today_time})
     print("\n critic report \n", feedback)
     return feedback
 
