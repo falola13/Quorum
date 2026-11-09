@@ -226,7 +226,7 @@ def test_find_citations():
 
 
 def test_check_citations():
-    sources = [1, 2, 4]
+    sources = [{"id": 1}, {"id": 2}, {"id": 4}]
     reports = "[1] A and fool [9] Just so you know.\n\n## Sources\n[3] y"
 
     results = check_citations(reports, sources)

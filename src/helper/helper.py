@@ -66,19 +66,17 @@ def build_sources_section(sources: list[dict]) -> str:
 
 
 def find_citations(report: str) -> set[int]:
-    splitted_report = report.split("## Sources")[0]
-    reg = re.findall(r"\[(\d+)\]", splitted_report)
-    s = {int(r) for r in reg}
+    body = report.split("## Sources")[0]
+    matches = re.findall(r"\[(\d+)\]", body)
+    source_ids = {int(r) for r in matches}
 
-    return s
+    return source_ids
 
 
 def check_citations(report: str, sources: list[dict]) -> dict:
-    set_report = set()
-    for source in sources:
-        set_report.add(source)
+    source = {s["id"] for s in sources}
     citations = find_citations(report)
 
-    uncited = set_report - citations
-    unknown = citations - set_report
+    uncited = source - citations
+    unknown = citations - source
     return {"unknown": sorted(unknown), "uncited": sorted(uncited)}
