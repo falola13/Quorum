@@ -9,6 +9,7 @@ from src.agents.agents import (
     writer_chain,
 )
 from src.helper.helper import (
+    build_sources_section,
     collect_search_result,
     format_results_with_ids,
     format_sources,
@@ -121,8 +122,10 @@ def run_writer(topic: str, sources: list[dict]):
         {"topic": topic, "research": research, "today": today_time()}
     )
 
-    print("\n Final Report\n", report)
-    return report
+    source = build_sources_section(sources)
+    final_report = f"{report}\n\n{source}"
+    print("\n Final Report\n", final_report)
+    return final_report
 
 
 def run_critic(report_result):

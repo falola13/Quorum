@@ -49,6 +49,12 @@ writer_prompt = ChatPromptTemplate.from_messages(
         (
             "human",
             """Write a detailed research report on the topic below.
+            
+        Instructions:
+        - After every factual claim, cite the source ID in square brackets, like [2]. If several sources support a claim, use [2][5].
+        - Only use ID that appear in the research below.
+        - If a source mentions another study (for example "a Brookings survey found..."), cite the ID of the source you read it in.
+        - don't write a Sources section; it will be added automatically
         
         Topic: {topic}
 
@@ -59,7 +65,7 @@ writer_prompt = ChatPromptTemplate.from_messages(
         - Introduction
         - Key Findings (minimum 3 well-explained points)
         - Conclusion
-        - Sources (list all URLs found in the research)
+        
         
         Sources marked (snippet only) are short summaries, not full pages, so treat them as weaker evidence and don't base a key finding on them alone
         Be detailed, factual and professional.

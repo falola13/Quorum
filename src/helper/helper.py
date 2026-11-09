@@ -50,3 +50,15 @@ def validate_ids(ids: list[int], results: list[dict]) -> list[int]:
 
 def today_time():
     return date.today().isoformat()
+
+
+def build_sources_section(sources: list[dict]) -> str:
+    header = "## Sources\n"
+    text = []
+    text.append(header)
+    for source in sources:
+        text.append(
+            f"[{source['id']}] {source['title']} — {source['url']} {'(snippet only)' if source['kind'] == 'snippet' else ''}"
+        )
+
+    return "\n".join(text)

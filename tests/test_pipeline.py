@@ -1,10 +1,13 @@
+from pydoc import source_synopsis
 import pytest
 from langchain_core.messages import ToolMessage
 
+from src.helper.helper import build_sources_section
 from src.pipelines.pipeline import (
     collect_search_result,
     format_results_with_ids,
     run_scraper,
+    run_writer,
     validate_ids,
 )
 
@@ -191,3 +194,27 @@ def test_run_scraper_raises_when_all_fail(monkeypatch):
 
     with pytest.raises(RuntimeError):
         run_scraper(results, [1, 2])
+
+
+def test_build_sources_section():
+    sources = [
+        {"id": 1, "title": "A page example", "url": "exampleA.com", "kind": "page"},
+        {
+            "id": 2,
+            "title": "A snippet example",
+            "url": "exampleB.com",
+            "kind": "snippet",
+        },
+        {
+            "id": 3,
+            "title": "Another page example",
+            "url": "exampleC.com",
+            "kind": "page",
+        },
+    ]
+
+    source = build_sources_section(sources)
+
+    assert "## Sources" in source
+    assert "exampleA.com" in source and "exampleB.com" in source
+    assert source.count("(snippet only)") == 1
