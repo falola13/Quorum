@@ -2,18 +2,18 @@ import logging
 
 from rich import print
 
-from helper.helper import (
-    collect_search_result,
-    format_results_with_ids,
-    format_sources,
-    today_time,
-    validate_ids,
-)
 from src.agents.agents import (
     build_search_agent,
     critic_chain,
     selector_chain,
     writer_chain,
+)
+from src.helper.helper import (
+    collect_search_result,
+    format_results_with_ids,
+    format_sources,
+    today_time,
+    validate_ids,
 )
 from src.tools.tools import scrape_page
 
@@ -118,7 +118,7 @@ def run_writer(topic: str, sources: list[dict]):
 
     research = format_sources(sources)
     report = writer_chain.invoke(
-        {"topic": topic, "research": research, "today": today_time}
+        {"topic": topic, "research": research, "today": today_time()}
     )
 
     print("\n Final Report\n", report)
@@ -130,7 +130,7 @@ def run_critic(report_result):
     print("step 5 - Critic is reviewing the report ...")
     print("=" * 50)
 
-    feedback = critic_chain.invoke({"report": report_result, "today": today_time})
+    feedback = critic_chain.invoke({"report": report_result, "today": today_time()})
     print("\n critic report \n", feedback)
     return feedback
 

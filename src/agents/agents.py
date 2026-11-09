@@ -44,7 +44,7 @@ writer_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are an expert research writer. Write clear, structured and insightful reports.Today's date is {today}",
+            "You are an expert research writer. Write clear, structured and insightful reports. Today's date is {today}",
         ),
         (
             "human",
@@ -77,7 +77,7 @@ critic_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a sharp and constructive research critic. Be honest and specific.Today's date is {today}. Do not treat sources from before today as future or hypothetical",
+            "You are a sharp and constructive research critic. Be honest and specific. Today's date is {today}. Do not treat sources from before today as future or hypothetical",
         ),
         (
             "human",
