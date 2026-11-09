@@ -61,6 +61,7 @@ writer_prompt = ChatPromptTemplate.from_messages(
         - Conclusion
         - Sources (list all URLs found in the research)
         
+        Sources marked (snippet only) are short summaries, not full pages, so treat them as weaker evidence and don't base a key finding on them alone
         Be detailed, factual and professional.
         """,
         ),

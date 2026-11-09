@@ -44,9 +44,9 @@ def test_ids_are_numbered():
             content="fake", tool_call_id="f", artifact=[{"url": "B"}, {"url": "C"}]
         ),
     ]
-    result = collect_search_result(fake)
-    ids = [r["id"] for r in result]
-    assert ids == [
+    results = collect_search_result(fake)
+    sources = [r["id"] for r in results]
+    assert sources == [
         1,
         2,
         3,
@@ -99,7 +99,7 @@ def test_validate_ids_drops_repeats():
     assert valid == [3, 1]
 
 
-def test_run_scraper_skips_failed_pages(monkeypatch):
+def test_run_scraper_fills_with_snippets(monkeypatch):
     def fake_scrape(url):
         if url == "B":
             return None
@@ -127,13 +127,11 @@ def test_run_scraper_skips_failed_pages(monkeypatch):
             "snippet": "A snippet4",
         },
     ]
-    page = run_scraper(results, [1, 2, 3])
-    s = [s["id"] for s in page]
-
-    assert s == [
-        1,
-        3,
-    ]
+    sources = run_scraper(results, [1, 2, 3])
+    ids = [p["id"] for p in sources]
+    kind = [p["kind"] for p in sources]
+    assert ids == [1, 3, 2]
+    assert kind == ["page", "page", "snippet"]
 
 
 def test_run_scraper_stops_at_target(monkeypatch):
@@ -192,6 +190,4 @@ def test_run_scraper_raises_when_all_fail(monkeypatch):
     results = [{"id": 1, "url": "A"}, {"id": 2, "url": "B"}]
 
     with pytest.raises(RuntimeError):
-        page = run_scraper(results, [1, 2])
-
-        assert page == None
+        run_scraper(results, [1, 2])

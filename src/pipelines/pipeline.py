@@ -42,8 +42,9 @@ def format_results_with_ids(results: list[dict]) -> str:
 def format_sources(sources: list[dict]) -> str:
     formatted_result = []
     for r in sources:
+        label = " (snippet only)" if r["kind"] == "snippet" else ""
         formatted_result.append(
-            f"[{r['id']}] Title: {r['title']}\nURL: {r['url']}\nContent: {r['content']}"
+            f"[{r['id']}] {label} Title: {r['title']}\nURL: {r['url']}\nContent: {r['content']}"
         )
     return "\n\n".join(formatted_result)
 
@@ -101,11 +102,23 @@ def run_scraper(
 
     by_id = {r["id"]: r for r in results}
     scraped_result = []
+    failed = []
     for source_id in selected_ids:
         result = by_id[source_id]
 
         page = scrape_page(result["url"])
         if page is None:
+            if result.get("snippet"):
+                failed.append(
+                    {
+                        "id": source_id,
+                        "title": result["title"],
+                        "url": result["url"],
+                        "content": result["snippet"],
+                        "kind": "snippet",
+                    }
+                )
+
             continue
         scraped_result.append(
             {
@@ -113,13 +126,26 @@ def run_scraper(
                 "title": result["title"],
                 "url": result["url"],
                 "content": page,
+                "kind": "page",
             }
         )
         if len(scraped_result) == target:
             break
-    if len(scraped_result) < target and len(scraped_result) >= 1:
-        logger.warning("Only %s of %s sources scraped", len(scraped_result), target)
-    if len(scraped_result) == 0:
+    for f in failed:
+        if len(scraped_result) == target:
+            break
+        scraped_result.append(f)
+    pages = sum(1 for s in scraped_result if s["kind"] == "page")
+    snippets = sum(1 for s in scraped_result if s["kind"] == "snippet")
+
+    if pages < target and scraped_result:
+        logger.warning(
+            "Only %s of %s sources scraped in full, %s from snippets",
+            pages,
+            target,
+            snippets,
+        )
+    if len(scraped_result) == 0 and len(failed) == 0:
         raise RuntimeError("Could not scrape any of the selected sources")
     print("\n Scraped Result page \n", scraped_result)
     return scraped_result
