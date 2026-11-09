@@ -1,4 +1,3 @@
-from pydoc import source_synopsis
 import pytest
 from langchain_core.messages import ToolMessage
 
@@ -7,7 +6,6 @@ from src.pipelines.pipeline import (
     collect_search_result,
     format_results_with_ids,
     run_scraper,
-    run_writer,
     validate_ids,
 )
 
