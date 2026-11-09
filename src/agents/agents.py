@@ -124,7 +124,7 @@ selector_prompt = ChatPromptTemplate.from_messages(
             Results:
             {results}
 
-            Pick the 3 most relevant and reliable results, best first, answering with their IDs only
+            Pick the 5 most relevant and reliable results, ranked best first, answering with their IDs only
             """,
         ),
     ]

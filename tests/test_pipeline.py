@@ -1,3 +1,4 @@
+import pytest
 from langchain_core.messages import ToolMessage
 
 from src.pipelines.pipeline import (
@@ -133,3 +134,60 @@ def test_run_scraper_skips_failed_pages(monkeypatch):
         1,
         3,
     ]
+
+
+def test_run_scraper_stops_at_target(monkeypatch):
+    def fake_scrape(url):
+        if url == "B":
+            return None
+        return "page text"
+
+    fake_results = [
+        {
+            "id": 1,
+            "url": "A",
+            "title": "A list",
+        },
+        {
+            "id": 2,
+            "url": "B",
+            "title": "A list",
+        },
+        {
+            "id": 3,
+            "url": "C",
+            "title": "A list",
+        },
+        {
+            "id": 4,
+            "url": "D",
+            "title": "A list",
+        },
+        {
+            "id": 5,
+            "url": "E",
+            "title": "A list",
+        },
+    ]
+    called = []
+
+    monkeypatch.setattr("src.pipelines.pipeline.scrape_page", fake_scrape)
+    page = run_scraper(fake_results, [1, 2, 3, 4, 5])
+    for r in page:
+        url = r["url"]
+        called.append(url)
+
+    assert [p["id"] for p in page] == [1, 3, 4]
+    assert "E" not in called
+
+
+def test_run_scraper_raises_when_all_fail():
+    def fake_scrape(url):
+        if url == "A" or url == "B":
+            return None
+        return "page test"
+
+    results = [{"id": 1, "url": "A"}, {"id": 2, "url": "B"}]
+
+    with pytest.raises(RuntimeError):
+        run_scraper(results, [1, 2])

@@ -1,4 +1,7 @@
+import logging
+
 from langchain_core.messages import ToolMessage
+from langgraph.runtime import Runtime
 from rich import print
 
 from src.agents.agents import (
@@ -8,6 +11,8 @@ from src.agents.agents import (
     writer_chain,
 )
 from src.tools.tools import scrape_page
+
+logger = logging.getLogger(__name__)
 
 
 def collect_search_result(messages) -> list:
@@ -87,7 +92,9 @@ def run_selector(topic: str, results: list[dict]) -> list[int]:
     return validate_ids(selector_result.ids, results)
 
 
-def run_scraper(results: list[dict], selected_ids: list[int]) -> list[dict]:
+def run_scraper(
+    results: list[dict], selected_ids: list[int], target: int = 3
+) -> list[dict]:
     print("\n" + "=" * 50)
     print("Step 3 - Scraping selected sources ...")
     print("=" * 50)
@@ -108,6 +115,12 @@ def run_scraper(results: list[dict], selected_ids: list[int]) -> list[dict]:
                 "content": page,
             }
         )
+        if len(scraped_result) == target:
+            break
+    if len(scraped_result) < target and len(scraped_result) >= 1:
+        logger.warning("Got just (%s) scraped result page", len(scraped_result))
+    if len(scraped_result) == 0:
+        raise RuntimeError("Could not scrape any of the selected sources")
     print("\n Scraped Result page \n", scraped_result)
     return scraped_result
 
