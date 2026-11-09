@@ -181,13 +181,17 @@ def test_run_scraper_stops_at_target(monkeypatch):
     assert "E" not in called
 
 
-def test_run_scraper_raises_when_all_fail():
+def test_run_scraper_raises_when_all_fail(monkeypatch):
     def fake_scrape(url):
         if url == "A" or url == "B":
             return None
         return "page test"
 
+    monkeypatch.setattr("src.pipelines.pipeline.scrape_page", fake_scrape)
+
     results = [{"id": 1, "url": "A"}, {"id": 2, "url": "B"}]
 
     with pytest.raises(RuntimeError):
-        run_scraper(results, [1, 2])
+        page = run_scraper(results, [1, 2])
+
+        assert page == None

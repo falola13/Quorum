@@ -101,15 +101,15 @@ def run_scraper(
 
     by_id = {r["id"]: r for r in results}
     scraped_result = []
-    for ids in selected_ids:
-        result = by_id[ids]
+    for source_id in selected_ids:
+        result = by_id[source_id]
 
         page = scrape_page(result["url"])
         if page is None:
             continue
         scraped_result.append(
             {
-                "id": ids,
+                "id": source_id,
                 "title": result["title"],
                 "url": result["url"],
                 "content": page,
@@ -118,7 +118,7 @@ def run_scraper(
         if len(scraped_result) == target:
             break
     if len(scraped_result) < target and len(scraped_result) >= 1:
-        logger.warning("Got just (%s) scraped result page", len(scraped_result))
+        logger.warning("Only %s of %s sources scraped", len(scraped_result), target)
     if len(scraped_result) == 0:
         raise RuntimeError("Could not scrape any of the selected sources")
     print("\n Scraped Result page \n", scraped_result)
